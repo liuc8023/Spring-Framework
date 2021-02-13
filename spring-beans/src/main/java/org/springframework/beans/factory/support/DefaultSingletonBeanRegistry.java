@@ -171,29 +171,46 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 		}
 	}
 
+	/**
+	 * 该方法是一个空壳方法
+	 * @param beanName bean的名称
+	 * @return 缓存中的对象（有可能是一个单例完整对象，也可能是一个早期对象（用于解决循环依赖））
+	 */
 	@Override
 	@Nullable
 	public Object getSingleton(String beanName) {
+		//在这里系统一般是允许早期对象引用的 allowEarlyReference通过这个参数可以控制解决循环依赖
 		return getSingleton(beanName, true);
 	}
 
 	/**
-	 * Return the (raw) singleton object registered under the given name.
-	 * <p>Checks already instantiated singletons and also allows for an early
-	 * reference to a currently created singleton (resolving a circular reference).
-	 * 允许提前引用，为了解决循环依赖问题
-	 * @param beanName the name of the bean to look for
+	 * 在网上很多写源码的大佬或者是<spring源码深度解析>一书上，也没有说清楚为啥要使用三级缓存（二级缓存是否能够解决循环依赖）
+	 * 答案是：可以，但是二级缓存没有很好的扩展性，为啥这么说？
+	 * 原因：获取三级缓存------getEarlyBeanReference()经过一系列的后置处理来给我们早期对象进行特殊化处理
+	 * 从三级缓存中获取包装对象的时候，他会经过一次后置处理器的处理对我们早期对象的bean进行特殊化处理，但是spring
+	 * 的原生后置处理器没有经过处理，而是留给了我们程序员进行扩展
+	 * singletonObject = singletonFactory.getObject();
+	 * 把三级缓存移植到二级缓存中
+	 * this.earlySingletonObjects.put(beanName,singletonObject);
+	 * //删除三级缓存中的值
+	 * this.singletonFactories.remove(beanName);
+	 * @param beanName bean的名
 	 * @param allowEarlyReference whether early references should be created or not
 	 * @return the registered singleton object, or {@code null} if none found
+	 *
 	 */
 	@Nullable
 	protected Object getSingleton(String beanName, boolean allowEarlyReference) {
 		// Quick check for existing instance without full singleton lock
-		/**
-		 * 尝试根据传进来的beanName从单例缓存池中获取到单例对象
+		/*
+		 * 第一步：我们尝试根据传进来的beanName去一级缓存（单例缓存池）中获取到单例对象，一般情况从该map中获取的对象是直接可以使用的。
+		 * IOC容器初始化加载单实例bean的时候第一次进来时，该map中一般返回空
 		 */
 		Object singletonObject = this.singletonObjects.get(beanName);
-		//没获取到单例bean对象并且这个单例的bean对象正在创建中
+		/**
+		 * 若在一级缓存中没获取到对象，并且singletonCurrentlyInCreation这个list包含该beanName
+		 * IOC容器初始化加载单实例bean的时候第一次进来时，该list中一般返回空，但是循环依赖的时候可以满足该条件
+		 */
 		if (singletonObject == null && isSingletonCurrentlyInCreation(beanName)) {
 			// 尝试从早期单例 map 中获取bean (早期单例对象 就是没有完全初始化完成的单例对象，比如对象的属性值还没有赋值)
 			singletonObject = this.earlySingletonObjects.get(beanName);
@@ -205,6 +222,10 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 					// Consistent creation of early reference within full singleton lock
 					singletonObject = this.singletonObjects.get(beanName);
 					if (singletonObject == null) {
+						/**
+						 * 尝试去二级缓存中获取对象（二级缓存中的对象是一个早期对象）
+						 * 何为早期对象：就是bean刚刚调用了构造方法，还来不及给bean的属性进行赋值的对象就是早期对象
+						 */
 						singletonObject = this.earlySingletonObjects.get(beanName);
 						if (singletonObject == null) {
 							//从三级缓存中拿到对象工厂
