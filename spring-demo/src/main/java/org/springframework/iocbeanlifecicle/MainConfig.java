@@ -4,7 +4,9 @@ package org.springframework.iocbeanlifecicle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-//@Configuration可理解为用spring的时候xml里面的<beans>标签
+/**
+ * @Configuration可理解为用spring的时候xml里面的<beans>标签
+ */
 @Configuration
 @ComponentScan(basePackages = "org.springframework.iocbeanlifecicle")
 public class MainConfig {
