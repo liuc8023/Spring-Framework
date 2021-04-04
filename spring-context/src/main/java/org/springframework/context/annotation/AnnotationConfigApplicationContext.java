@@ -97,9 +97,21 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 * {@link Configuration @Configuration} classes
 	 */
 	public AnnotationConfigApplicationContext(Class<?>... componentClasses) {
-		//调用构造函数
+		/**
+		 * 这里由于他有父类，所以会先调用父类的构造方法:
+		 * 看源码得知初始化了DefaultListableBeanFactory
+		 *
+		 * 然后才调用自己的构造方法:
+		 * 1.创建一个读取注解的Bean定义读取器
+		 * 	将bean读取完后，会调用DefaultListableBeanFactory注册这个bean
+		 *
+		 */
 		this();
-		//注册我们的配置类
+		/**
+		 * 注册我们的配置类，把传入的Class进行注册,Class既可以有@Configuration注解,也可以没有@Configuration注解
+		 * 怎么注册? 委托给了 org.springframework.context.annotation.AnnotatedBeanDefinitionReader.register 方法进行注册
+		 * 传入Class 生成  BeanDefinition , 然后通过 注册到 BeanDefinitionRegistry
+		 */
 		register(componentClasses);
 		//IOC容器刷新接口
 		refresh();
