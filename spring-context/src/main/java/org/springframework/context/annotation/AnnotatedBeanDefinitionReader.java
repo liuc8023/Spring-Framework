@@ -134,7 +134,7 @@ public class AnnotatedBeanDefinitionReader {
 	 */
 	public void register(Class<?>... componentClasses) {
 		/**
-		 * 循环多个配置类
+		 * 循环调用AnnotatedBeanDefinitionReader注解读取器去读取配置类
 		 */
 		for (Class<?> componentClass : componentClasses) {
 			registerBean(componentClass);
@@ -258,9 +258,12 @@ public class AnnotatedBeanDefinitionReader {
 		 */
 		AnnotatedGenericBeanDefinition abd = new AnnotatedGenericBeanDefinition(beanClass);
 		/**
-		 * 根据 @conditional注解来判断这个类是否要跳过解析
+		 * 判断注册的Class 是否包含@Conditional注解，如果有获取全部value，放入List中
+		 * 排序后，遍历所有的Conditiion的实现，使用反射获取对象，执行matches方法，
+		 * 如果发现有返回false，中断循环直接返回true，
 		 */
 		if (this.conditionEvaluator.shouldSkip(abd.getMetadata())) {
+			//如果 @Conditional条件不满足，不进行注册
 			return;
 		}
 
