@@ -560,11 +560,13 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * active flag as well as performing any initialization of property sources.
 	 */
 	protected void prepareRefresh() {
-		// Switch to active.
+		// 记录容器开始初始化时间
 		this.startupDate = System.currentTimeMillis();
+		//设置容器的关闭状态closed(false)
 		this.closed.set(false);
+		//设置容器的激活状态active(true)
 		this.active.set(true);
-
+		// 确认Log记录已经开启
 		if (logger.isDebugEnabled()) {
 			if (logger.isTraceEnabled()) {
 				logger.trace("Refreshing " + this);
